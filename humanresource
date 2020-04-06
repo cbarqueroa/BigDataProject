@@ -1,0 +1,547 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
+#imports
+
+import numpy as np
+import pandas as pd
+import scipy
+from math import sqrt
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import preprocessing
+from sklearn.preprocessing import LabelEncoder
+
+
+# In[ ]:
+
+
+#estimators
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
+from sklearn import linear_model
+
+
+# In[ ]:
+
+
+#model metrics
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
+
+
+# In[ ]:
+
+
+#data
+HRData = pd.read_csv('C:\CONCATENACION\HRDataset_L.csv', error_bad_lines=False)#, header=1)
+HRData.head()
+HRData.info()
+HRData.describe()
+HRData
+
+
+# In[ ]:
+
+
+header = HRData.dtypes.index
+print(header)
+
+
+# In[ ]:
+
+
+HRData['PayRate'].describe()
+
+
+# In[ ]:
+
+
+plt.hist(HRData['PayRate'])
+plt.show()
+
+
+# In[ ]:
+
+
+sns.factorplot('Gender', data=HRData, kind='count', aspect=1.5)
+
+
+# In[ ]:
+
+
+HRData.groupby(['Gender','EmploymentStatus'])['EmploymentStatus'].count()
+
+
+# In[ ]:
+
+
+g = sns.factorplot('EmploymentStatus', data=HRData, hue='Gender', kind='count', aspect=1.75)
+g.set_xlabels('EmploymentStatus')
+
+
+# In[ ]:
+
+
+sns.factorplot('MaritalStatus', data=HRData, kind='count', aspect=1.5)
+
+
+# In[ ]:
+
+
+Activos = HRData[HRData['EmploymentStatus']=="Active"]
+len(Activos)
+
+
+# In[ ]:
+
+
+Activos.pivot_table('EmpID','MaritalStatus',  aggfunc=len, margins=True)
+
+
+# In[ ]:
+
+
+sns.factorplot('MaritalStatus', data=Activos, kind='count', aspect=1.5)
+
+
+# In[ ]:
+
+
+Activos.groupby(['Gender','MaritalStatus'])['MaritalStatus'].count()
+
+
+# In[ ]:
+
+
+sns.factorplot('Termd', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+sns.factorplot('EmploymentStatus', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+sns.factorplot('Department', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+sns.factorplot('PerformanceScore', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+sns.factorplot('HispanicLatino', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+sns.factorplot('FromDiversityJobFairID', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+sns.factorplot('State', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+sns.factorplot('CitizenDesc', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+sns.factorplot('RaceDesc', data=HRData, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+Produccion = Activos[Activos['Department']=="Production       "]
+len(Produccion)
+
+
+# In[ ]:
+
+
+Produccion.groupby(['Gender','MaritalStatus'])['MaritalStatus'].count()
+
+
+# In[ ]:
+
+
+sns.factorplot('PerformanceScore', data=Produccion, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+Needs = Activos[Activos['PerformanceScore']=="Needs Improvement"]
+len(Needs)
+
+
+# In[ ]:
+
+
+sns.factorplot('Department', data=Needs, kind='count', aspect=2)
+
+
+# In[ ]:
+
+
+#empleados que estan activos y necesitan improvement
+Needs[['Employee_Name','EmpID','MaritalStatus','Department','Manager','DateofHire','LastPerformanceReview_Date']]
+
+
+# In[ ]:
+
+
+Needs.groupby(['Department', 'Manager'])['Department'].count()
+
+
+# In[ ]:
+
+
+Needs['Department'].value_counts().plot(kind='pie')
+
+
+# In[ ]:
+
+
+Produccion['RaceDesc'].value_counts().plot(kind='pie')
+
+
+# In[ ]:
+
+
+Activos['Position'].unique()
+
+
+# In[ ]:
+
+
+plt.figure(figsize=(16,9))
+Produccion['Position'].value_counts().plot(kind='bar')
+
+
+# In[ ]:
+
+
+Activos.plot(x='PositionID',y='PayRate',kind='scatter')
+
+
+# In[ ]:
+
+
+Activos.groupby('Department')['PayRate'].sum().plot(kind='bar')
+
+
+# In[ ]:
+
+
+PersonaMayorPago= Activos['PayRate'].idxmax()
+Activos.loc[PersonaMayorPago]
+
+
+Activos.loc[Activos['PayRate'].idxmax()]
+
+
+# In[ ]:
+
+
+sns.violinplot('HispanicLatino', 'PayRate', data = Activos)
+
+
+# In[ ]:
+
+
+corrmat = HRData.corr()
+plt.subplots(figsize=(8,8))
+sns.heatmap(corrmat, vmax=0.9, square=True)
+
+
+# In[ ]:
+
+
+HRData.tail()
+
+
+# In[ ]:
+
+
+sns.distplot(Activos['PayRate'])
+
+
+# In[ ]:
+
+
+sns.regplot( x = 'Zip', y = 'PayRate', data = Activos)
+
+
+# In[ ]:
+
+
+g = sns.FacetGrid(Activos, col='GenderID', row='Department')
+g.map(plt.hist, 'PayRate')
+
+
+# In[ ]:
+
+
+g = sns.FacetGrid(HRData, row='RecruitmentSource')
+g.map(plt.hist, 'PerformanceScore')
+
+
+# In[ ]:
+
+
+sns.boxplot(y = 'RecruitmentSource', x = 'PerfScoreID', data = HRData)
+
+
+# In[ ]:
+
+
+sns.boxplot(y = 'Manager', x = 'PerfScoreID', data = HRData)
+
+
+# In[ ]:
+
+
+sns.boxplot(y = 'PayRate', x = 'PerfScoreID', data = HRData)
+
+
+# In[ ]:
+
+
+sns.boxplot(y = 'TermReason', x = 'PerfScoreID', data = HRData)
+
+
+# In[ ]:
+
+
+corrMat = HRData
+corrMat = corrMat.corr()
+corrMat
+print(corrMat)
+corrMat.style.background_gradient(cmap='coolwarm')
+
+
+# In[ ]:
+
+
+corrMat = HRData
+corrMat = corrMat.drop('DaysLateLast30',axis=1)
+corrMat = corrMat.drop('EmpSatisfaction',axis=1)
+corrMat = corrMat.drop('GenderID',axis=1)
+corrMat = corrMat.drop('EngagementSurvey',axis=1)
+corrMat = corrMat.drop('MaritalStatusID',axis=1)
+corrMat = corrMat.drop('HispanicID',axis=1)
+corrMat = corrMat.drop('PerfScoreID',axis=1)
+corrMat = corrMat.drop('MarriedID',axis=1)
+corrMat = corrMat.drop('FromDiversityJobFairID',axis=1)
+
+corrMat = corrMat.corr()
+corrMat
+print(corrMat)
+corrMat.style.background_gradient(cmap='coolwarm')
+
+
+# In[ ]:
+
+
+#features
+features = corrMat
+print('Summary of feature sample')
+features.head()
+
+
+# In[ ]:
+
+
+#dependent variable
+depVar = HRData['PayRate']
+
+depVar.describe()
+
+
+# In[ ]:
+
+
+#Training Set (Feature Space: X Training)
+X_train = (features[: 1000])
+X_train.head()
+
+
+# In[ ]:
+
+
+#Dependent Variable Training Set (y Training)
+y_train = depVar[: 8]
+y_train_count = len(y_train.index)
+print('The number of observations in the Y training set are:',str(y_train_count))
+y_train.head()
+
+
+# In[ ]:
+
+
+#Testing Set (X Testing)
+X_test = features[-100:]
+X_test_count = len(X_test.index)
+print('The number of observations in the feature testing set is:',str(X_test_count))
+print(X_test.head())
+
+
+# In[ ]:
+
+
+#Ground Truth (y_test) 
+y_test = depVar[-8:]
+y_test_count = len(y_test.index)
+print('The number of observations in the Y training set are:',str(y_test_count))
+y_test.head()
+
+
+# In[ ]:
+
+
+#CROSS VALIDATION
+
+X_train, X_test, y_train, y_test = train_test_split(X_train, y_train)
+X_train.shape, X_test.shape
+
+
+# In[ ]:
+
+
+#Models
+modelSVR = SVR()
+modelRF = RandomForestRegressor()
+modelLR = LinearRegression()
+
+
+# In[ ]:
+
+
+#Random Forest
+modelRF.fit(X_train,y_train)
+
+#Support Vector Regression
+modelSVR.fit(X_train,y_train)
+
+#Linear Regression
+modelLR.fit(X_train,y_train)
+
+
+# In[ ]:
+
+
+#Random Forest Regression Model Fitting and Scoring
+#Model Fitting
+modelRF.fit(X_train,y_train)
+print(cross_val_score(modelRF, X_train, y_train))
+modelRF.score(X_train,y_train)
+
+
+# In[ ]:
+
+
+#Support Vector Regression Model Fitting and Scoring
+
+modelSVR.fit(X_train,y_train)
+print(cross_val_score(modelSVR, X_train, y_train)) 
+modelSVR.score(X_train,y_train)
+
+
+# In[ ]:
+
+
+#Linear Regression Model Fitting and Scoring
+
+modelLR.fit(X_train,y_train)
+print(cross_val_score(modelLR, X_train, y_train)) 
+modelLR.score(X_train,y_train)
+
+
+# In[ ]:
+
+
+#Making Predictions modelRF
+predictionsRF = modelRF.predict(X_test)
+rmse = sqrt(mean_squared_error(y_test, predictionsRF))
+predRsquared = r2_score(y_test,predictions)
+
+
+rmse = sqrt(mean_squared_error(y_test, predictionsRF))
+print('R Squared: %.3f' % predRsquared)
+print('RMSE: %.3f' % rmse)
+
+
+# In[ ]:
+
+
+#Make Predictions modelSVR
+predictions = modelSVR.predict(X_test)
+predRsquared = r2_score(y_test,predictions)
+rmse = sqrt(mean_squared_error(y_test, predictions))
+print('R Squared: %.3f' % predRsquared)
+print('RMSE: %.3f' % rmse)
+
+
+# In[ ]:
+
+
+#Make Predictions modelLR
+predictions = modelLR.predict(X_test)
+predRsquared = r2_score(y_test,predictions)
+rmse = sqrt(mean_squared_error(y_test, predictions))
+print('R Squared: %.3f' % predRsquared)
+print('RMSE: %.3f' % rmse)
+
+
+# In[ ]:
+
+
+ytestvalues=y_test.values
+plt.figure(figsize=(20,8))
+plt.title("Reales vrs Prediccion")
+plt.plot(ytestvalues,label="Ground Truth")
+plt.plot(predictionsRF,label="Predictions")
+plt.legend()
+plt.show()
+
+
+# In[ ]:
+
+
+ytestvalues
+
+
+# In[ ]:
+
+
+predictions
+
+
+# In[ ]:
+
+
+
+
